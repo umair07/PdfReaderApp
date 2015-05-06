@@ -5,14 +5,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
+import android.annotation.SuppressLint;
+import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,11 +20,11 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import at.technikum.mti.fancycoverflow.FancyCoverFlow;
-
-import com.artifex.mupdfdemo.MuPDFActivity;
-import com.artifex.mupdfdemo.R;
+import com.artifex.mupdflib.MuPDFActivity;
+import com.coeus.pdfreader.R;
 import com.coeus.pdfreader.adapters.CoverFlowAdapter;
 
+@SuppressLint("NewApi")
 public class DashboardFragment extends Fragment implements OnClickListener
 {
 	View rootView;

@@ -1,14 +1,15 @@
 package com.coeus.pdfreader.fragments;
 
+import android.annotation.SuppressLint;
+import android.app.Fragment;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import com.coeus.pdfreader.R;
 
-import com.artifex.mupdfdemo.R;
-
+@SuppressLint("NewApi")
 public class PageViewerFragment  extends Fragment implements OnClickListener
 {
 

@@ -24,7 +24,7 @@ import android.widget.RelativeLayout.LayoutParams;
 import at.technikum.mti.fancycoverflow.FancyCoverFlow;
 import at.technikum.mti.fancycoverflow.FancyCoverFlowAdapter;
 
-import com.artifex.mupdfdemo.R;
+import com.coeus.pdfreader.R;
 
 public class CoverFlowAdapter extends FancyCoverFlowAdapter {
 
