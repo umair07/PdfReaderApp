@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
 import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.content.Context;
@@ -18,8 +19,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.Button;
 import at.technikum.mti.fancycoverflow.FancyCoverFlow;
+
 import com.artifex.mupdflib.MuPDFActivity;
 import com.coeus.pdfreader.R;
 import com.coeus.pdfreader.adapters.CoverFlowAdapter;
@@ -31,6 +35,7 @@ public class DashboardFragment extends Fragment implements OnClickListener
 	private FancyCoverFlow fancyCoverFlow;
 	Button btnDashboardOpenFile;
 	String[] filelist;
+	private int coverNumber = 0;
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -55,6 +60,21 @@ public class DashboardFragment extends Fragment implements OnClickListener
 			e.printStackTrace();
 		}
 		copyAssets();
+		fancyCoverFlow.setOnItemSelectedListener(new OnItemSelectedListener() {
+
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View view,
+					int position, long id) {
+				
+				coverNumber =position;
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {
+				// TODO Auto-generated method stub
+				coverNumber =0;
+			}
+		});
 		return rootView;
 
 	}
@@ -72,7 +92,7 @@ public class DashboardFragment extends Fragment implements OnClickListener
 
 		case R.id.btnOpenFile:
 			String DestinationFile = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "mypdf/";
-						Uri uri = Uri.parse("file://"+DestinationFile +filelist[1].toString());
+						Uri uri = Uri.parse("file://"+DestinationFile +filelist[coverNumber].toString());
 						Intent intent = new Intent(getActivity(),MuPDFActivity.class);
 						intent.setAction(Intent.ACTION_VIEW);
 						intent.setData(uri);

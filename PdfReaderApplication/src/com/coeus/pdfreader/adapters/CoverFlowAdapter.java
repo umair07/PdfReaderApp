@@ -32,7 +32,7 @@ public class CoverFlowAdapter extends FancyCoverFlowAdapter {
     // Private members
     // =============================================================================
 
-    private int[] images = {R.drawable.cover_1, R.drawable.cover_2, R.drawable.cover_3, R.drawable.cover_4,};
+    private int[] images = {R.drawable.cover_4, R.drawable.cover_2, R.drawable.cover_1, R.drawable.cover_3,};
 
     // =============================================================================
     // Supertype overrides

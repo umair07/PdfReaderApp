@@ -1,8 +1,15 @@
 package com.artifex.mupdflib;
 
+import java.io.InputStream;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executor;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -18,22 +25,37 @@ import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Display;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.*;
+import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.widget.ViewAnimator;
 
 import com.artifex.mupdflib.CallbackApplication.MuPDFCallbackClass;
 import com.artifex.mupdflib.TwoWayView.Orientation;
-
-import java.io.InputStream;
-import java.util.concurrent.Executor;
+import com.coeus.pdfreader.ormlite.BookmarksORM;
+import com.coeus.pdfreader.ormlite.DatabaseHelper;
+import com.j256.ormlite.android.apptools.OpenHelperManager;
+import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.DeleteBuilder;
 
 //import android.text.method.PasswordTransformationMethod;
 //import android.widget.SeekBar;
@@ -54,20 +76,23 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	private final int PRINT_REQUEST = 1;
 	private final int FILEPICK_REQUEST = 2;
 	private final int PAGE_CHOICE_REQUEST = 3;
+	private  int currentPageNumber =0;
 	private MuPDFCore core;
 	private String mFileName;
+	private String  fileNameUri;
 	private String mDocName;
 	private int mOrientation;
 	private MuPDFReaderView mDocView;
 	private View mButtonsView;
 	private boolean mButtonsVisible;
+	ArrayAdapter<String> adapter;
 	// private EditText mPasswordView;
 	// private TextView mFilenameView;
 	///private SeekBar mPageSlider;
 	///private int mPageSliderRes;
 	private TextView mPageNumberView;
 	private TextView mInfoView;
-	private ImageButton mSearchButton;
+	private ImageButton mSearchButton,mBookmarkButton,mShowBookmarksButton;
 	//private ImageButton mReflowButton;
 	//private ImageButton mOutlineButton;
 	//private ImageButton	mMoreButton;
@@ -245,7 +270,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		return core;
 	}
 
-	
+
 	@SuppressWarnings("unused")
 	private Context getContext() {
 		return this;
@@ -273,7 +298,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 				} else {
 					mPreview.setSelectionFromOffset(position,
 							(mPreview.getWidth() / 2)
-									- (childmeasuredwidth / 2));
+							- (childmeasuredwidth / 2));
 				}
 			} else {
 				Log.e("centerOnPosition", "childmeasuredwidth = 0");
@@ -282,8 +307,8 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			Log.e("centerOnPosition", "childcount = 0");
 		}
 	}
-	
-	
+
+
 	/** Called when the activity is first created. */
 	@SuppressLint({ "StringFormatMatches", "NewApi" })
 	@Override
@@ -291,13 +316,13 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		super.onCreate(savedInstanceState);
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-	        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-	        getWindow().setStatusBarColor(getResources().getColor(R.color.actionbar_background_dark));
-	        getWindow().setNavigationBarColor(getResources().getColor(R.color.actionbar_background_dark));
-	    }
-		
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+			getWindow().setStatusBarColor(getResources().getColor(R.color.actionbar_background_dark));
+			getWindow().setNavigationBarColor(getResources().getColor(R.color.actionbar_background_dark));
+		}
+
 		LibraryUtils.reloadLocale(getApplicationContext());
-		
+
 		mAlertBuilder = new AlertDialog.Builder(this);
 
 		if (core == null) {
@@ -312,6 +337,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			byte buffer[] = null;
 			if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 				Uri uri = intent.getData();
+				fileNameUri =uri.toString();
 				System.out.println("URI to open is: " + uri);
 				if (uri.toString().startsWith("content://")) {
 					/*
@@ -361,7 +387,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 
 								alert.show();
 								return;
-						*/
+					 */
 
 					String reason = null;
 					try {
@@ -395,8 +421,8 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 								}
 
 							}
-						//} else {
-						//	uri = Uri.parse(str);
+							//} else {
+							//	uri = Uri.parse(str);
 						}
 						catch (Exception e2) {
 							System.out.println("Exception in Transformer Prime file manager code: " + e2);
@@ -410,10 +436,10 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 						setTitle(String.format(res.getString(R.string.cannot_open_document_Reason), reason));
 						alert.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dismiss),
 								new DialogInterface.OnClickListener() {
-									public void onClick(DialogInterface dialog, int which) {
-										finish();
-									}
-								});
+							public void onClick(DialogInterface dialog, int which) {
+								finish();
+							}
+						});
 						alert.show();
 						return;
 
@@ -454,10 +480,10 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			alert.setButton(AlertDialog.BUTTON_POSITIVE,
 					getString(R.string.dismiss),
 					new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface dialog, int which) {
-							finish();
-						}
-					});
+				public void onClick(DialogInterface dialog, int which) {
+					finish();
+				}
+			});
 			alert.show();
 			return;
 		}
@@ -469,7 +495,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		} else {
 			core.setDisplayPages(1);
 		}
-		
+
 		createUI(savedInstanceState);
 	}
 
@@ -505,6 +531,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			@Override
 			protected void onMoveToChild(int i) {
 				updatePageNumView(i);
+				currentPageNumber = i;
 				//if (core == null)
 				//	return;
 				//mPageNumberView.setText(String.format("%d / %d", i + 1,
@@ -513,8 +540,8 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 				///mPageSlider.setProgress(i * mPageSliderRes);
 				super.onMoveToChild(i);
 				setCurrentlyViewedPreview();
-				
-				
+
+
 			}
 
 			@Override
@@ -548,19 +575,19 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 					mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 				// fall through
 				default:
-				*/
-					// Not in annotation editing mode, but the pageview will
-					// still select and highlight hit annotations, so
-					// deselect just in case.
-					MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
-					if (pageView != null)
-						pageView.deselectAnnotation();
-					//break;
+				 */
+				// Not in annotation editing mode, but the pageview will
+				// still select and highlight hit annotations, so
+				// deselect just in case.
+				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+				if (pageView != null)
+					pageView.deselectAnnotation();
+				//break;
 				//}
 			}
 		};
 		mDocView.setAdapter(new MuPDFPageAdapter(this, this, core));
-		
+
 		Intent intent = getIntent();
 		boolean idleenabled = intent.getBooleanExtra("idleenabled", false);
 		boolean highlight = intent.getBooleanExtra("linkhighlight", false);
@@ -569,7 +596,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		mDocView.setLinksHighlighted(highlight);
 		mDocView.setScrollingDirectionHorizontal(horizontalscrolling);
 		mDocName = intent.getStringExtra("docname");
-		
+
 		mSearchTask = new SearchTask(this, core) {
 			@Override
 			protected void onTextFound(SearchTaskResult result) {
@@ -611,11 +638,97 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 								/ mPageSliderRes);
 					}
 				});
-		*/
+		 */
 		// Activate the search-preparing button
 		mSearchButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				searchModeOn();
+			}
+		});
+
+		// add bookmarks 
+		mBookmarkButton.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				Dao<BookmarksORM, Integer> bookmarkDao = null;
+				DatabaseHelper dbHelper = OpenHelperManager
+						.getHelper(getApplicationContext(),
+								DatabaseHelper.class);
+				String[] splitedfileName = fileNameUri.split("/");
+				String fileName = splitedfileName[7];
+
+
+				try {
+					bookmarkDao= dbHelper
+							.getBookmarkDao();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				try {
+					bookmarkDao.create(new BookmarksORM(fileName+"_"+currentPageNumber, System.currentTimeMillis()));
+					List<BookmarksORM> bookmarks = bookmarkDao.queryForAll();
+					for (int i = 0; i < bookmarks.size(); i++) {
+						Log.e("", "Pages: "+bookmarks.get(i).getBookmarkPageNum());
+					}
+					bookmarkDao.closeLastIterator();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
+		});
+
+		// show Bookmarks List
+
+		mShowBookmarksButton.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+
+				List<String> bookmarksList = new ArrayList<String>();
+				Dao<BookmarksORM, Integer> bookmarkDao = null;
+				DatabaseHelper dbHelper = OpenHelperManager
+						.getHelper(getApplicationContext(),
+								DatabaseHelper.class);
+
+				String[] splitedfileName = fileNameUri.split("/");
+				String fileName = splitedfileName[7];
+
+
+				try {
+					bookmarkDao= dbHelper
+							.getBookmarkDao();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				try {
+					List<BookmarksORM> bookmarks = bookmarkDao.queryForAll();
+					for (int i = 0; i < bookmarks.size(); i++) {
+						if(bookmarks.get(i).getBookmarkPageNum().contains(fileName))
+						{
+							bookmarksList.add(bookmarks.get(i).getBookmarkPageNum());
+						}
+						Log.e("", "Pages: "+bookmarks.get(i).getBookmarkPageNum());
+					}
+					bookmarkDao.closeLastIterator();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				if(bookmarksList.size()>0)
+				{
+				showBookMarksList(bookmarksList);
+				}else
+				{
+					Toast.makeText(getApplicationContext(), "No Bookmarks found.", Toast.LENGTH_SHORT).show();
+				}
 			}
 		});
 
@@ -626,7 +739,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 				toggleReflow();
 			}
 		});
-		*/
+		 */
 		/*
 		if (core.fileFormat().startsWith("PDF")) {
 			mAnnotButton.setOnClickListener(new View.OnClickListener() {
@@ -638,7 +751,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		} else {
 			mAnnotButton.setVisibility(View.GONE);
 		}
-		*/
+		 */
 		// Search invoking buttons are disabled while there is no text specified
 		mSearchBack.setEnabled(false);
 		mSearchFwd.setEnabled(false);
@@ -722,7 +835,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		} else {
 			mOutlineButton.setVisibility(View.GONE);
 		}
-		*/
+		 */
 		// Reenstate last state if it was recorded
 		///SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
 		///mDocView.setDisplayedViewIndex(prefs.getInt("page" + mFileName, 0));
@@ -738,7 +851,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 				mDocView.setDisplayedViewIndex((pageNum == 0) ? 0 : pageNum * 2 - 1);
 			}
 		}
-		
+
 		//if (savedInstanceState == null
 		//		|| !savedInstanceState.getBoolean("ButtonsHidden", false))
 		//	showButtons();
@@ -747,7 +860,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			searchModeOn();
 
 		//if (savedInstanceState != null && savedInstanceState.getBoolean("ReflowMode", false))
-			//reflowModeSet(true);
+		//reflowModeSet(true);
 
 		// Give preview thumbnails time to appear before showing bottom bar
 		if (savedInstanceState == null
@@ -764,7 +877,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 				}
 			}, 250);
 		}
-				
+
 		// Stick the document view and the buttons overlay into a parent view
 		RelativeLayout layout = new RelativeLayout(this);
 		layout.addView(mDocView);
@@ -777,28 +890,28 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
-			//case OUTLINE_REQUEST:
-			//	if (resultCode >= 0)
-			//		mDocView.setDisplayedViewIndex(resultCode);
-			//	break;
-			case PRINT_REQUEST:
-				if (resultCode == RESULT_CANCELED)
-					showInfo(getString(R.string.print_failed));
-				break;
-			case FILEPICK_REQUEST:
-				if (mFilePicker != null && resultCode == RESULT_OK)
-					mFilePicker.onPick(data.getData());
-				break;
-			case PAGE_CHOICE_REQUEST:
-				if (resultCode >= 0) {
-					int page = resultCode;
-					if (core.getDisplayPages() == 2) {
-						page = (page + 1) / 2;
-					}
-					mDocView.setDisplayedViewIndex(page);
-					setCurrentlyViewedPreview();
+		//case OUTLINE_REQUEST:
+		//	if (resultCode >= 0)
+		//		mDocView.setDisplayedViewIndex(resultCode);
+		//	break;
+		case PRINT_REQUEST:
+			if (resultCode == RESULT_CANCELED)
+				showInfo(getString(R.string.print_failed));
+			break;
+		case FILEPICK_REQUEST:
+			if (mFilePicker != null && resultCode == RESULT_OK)
+				mFilePicker.onPick(data.getData());
+			break;
+		case PAGE_CHOICE_REQUEST:
+			if (resultCode >= 0) {
+				int page = resultCode;
+				if (core.getDisplayPages() == 2) {
+					page = (page + 1) / 2;
 				}
-				break;
+				mDocView.setDisplayedViewIndex(page);
+				setCurrentlyViewedPreview();
+			}
+			break;
 		}
 		super.onActivityResult(requestCode, resultCode, data);
 	}
@@ -808,7 +921,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		core = null;
 		return mycore;
 	}
-/*
+	/*
 	private void reflowModeSet(boolean reflow) {
 		mReflow = reflow;
 		mDocView.setAdapter(mReflow ? new MuPDFReflowAdapter(this, core) : new MuPDFPageAdapter(this, this, core));
@@ -821,14 +934,14 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		setButtonEnabled(mMoreButton, !reflow);
 		mDocView.refresh(mReflow);
 	}
-*/
-/*
+	 */
+	/*
 	private void toggleReflow() {
 		reflowModeSet(!mReflow);
 		showInfo(mReflow ? getString(R.string.entering_reflow_mode)
 				: getString(R.string.leaving_reflow_mode));
 	}
-*/
+	 */
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
@@ -905,7 +1018,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		// Inform pages of the change.
 		mDocView.setLinksEnabled(highlight);
 	}
-	*/
+	 */
 	private void showButtons() {
 		if (core == null)
 			return;
@@ -1108,12 +1221,12 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			}
 		});
 		mPreviewBarHolder.addView(mPreview);
-		
+
 		mPageNumberView = (TextView) mButtonsView.findViewById(R.id.pageNumber);
 		mInfoView = (TextView) mButtonsView.findViewById(R.id.info);
 		mSearchButton = (ImageButton) mButtonsView.findViewById(R.id.searchButton);
-		//mReflowButton = (ImageButton) mButtonsView.findViewById(R.id.reflowButton);
-		//mOutlineButton = (ImageButton) mButtonsView.findViewById(R.id.outlineButton);
+		mBookmarkButton = (ImageButton) mButtonsView.findViewById(R.id.bookmarkButton);
+		mShowBookmarksButton = (ImageButton) mButtonsView.findViewById(R.id.showBookmarkButton);
 		//mAnnotButton = (ImageButton)mButtonsView.findViewById(R.id.editAnnotButton);
 		//mAnnotTypeText = (TextView)mButtonsView.findViewById(R.id.annotType);
 		mTopBarSwitcher = (ViewAnimator) mButtonsView.findViewById(R.id.switcher);
@@ -1130,8 +1243,8 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	}
 
 	public void OnMoreButtonClick(View v) {
-		
-		
+
+
 		if (core != null) {
 			int i = mDocView.getDisplayedViewIndex();
 			if (core.getDisplayPages() == 2) {
@@ -1143,11 +1256,11 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			//Intent intent = prevAct.getIntent();
 			Intent intent = new Intent(MuPDFActivity.this, PDFPreviewGridActivity.class);
 			startActivityForResult(intent, PAGE_CHOICE_REQUEST);
-			
+
 			MuPDFCallbackClass.sendGaiView(String.format("documentThumbView (%1$s)", mDocName));
 
 		}
-		
+
 		/////////////mTopBarMode = TopBarMode.More;
 		/////////////mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 	}
@@ -1160,11 +1273,11 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	public void OnPrintButtonClick(View v) {
 		printDoc();
 	}
-	
+
 	public void OnCloseReaderButtonClick(View v) {
 		finish();
 	}
-/*
+	/*
 	public void OnCancelAcceptButtonClick(View v) {
 		MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 		if (pageView != null) {
@@ -1172,7 +1285,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			pageView.cancelDraw();
 		}
 		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
-		
+
 		//switch (mAcceptMode) {
 		//case CopyText:
 		//	mTopBarMode = TopBarMode.More;
@@ -1181,10 +1294,10 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			//mTopBarMode = TopBarMode.Annot;
 		//	break;
 		//}
-		
+
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 	}
-	*/
+	 */
 
 	public void OnCancelSearchButtonClick(View v) {
 		searchModeOff();
@@ -1282,5 +1395,127 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		mFilePicker = picker;
 		//Intent intent = new Intent(this, ChoosePDFActivity.class);
 		//startActivityForResult(intent, FILEPICK_REQUEST);
+	}
+
+	public void showBookMarksList(final List<String> list)
+	{
+		final Dialog dialogBookmarks;
+		ListView listViewBookmarks;
+		View viewList;
+		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		viewList = this.getLayoutInflater().inflate(R.layout.listview_bookmarks,null);
+		dialogBookmarks = new Dialog(this);
+		dialogBookmarks.setTitle("BookMarks");
+		dialogBookmarks.setContentView(viewList);        
+		dialogBookmarks.show();
+		Display display = getWindowManager().getDefaultDisplay();
+		int width = display.getWidth();
+		listViewBookmarks = (ListView) viewList.findViewById(R.id.listviewBookmarks);
+		listViewBookmarks.setBackgroundResource(R.color.blue);		
+		adapter = (new ArrayAdapter<String>( this,android.R.layout.simple_list_item_1,list));
+		listViewBookmarks.setAdapter(adapter);
+
+		listViewBookmarks.setOnItemClickListener(new OnItemClickListener() {
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				dialogBookmarks.cancel();
+				String[] splitPageNim = list.get(position).split("_");
+				String pageNum = splitPageNim[1];
+				mDocView.setDisplayedViewIndex(Integer.parseInt(pageNum)-1);
+				updatePageNumView(Integer.parseInt(pageNum)-1);
+
+			}
+		});
+		listViewBookmarks.setOnItemLongClickListener(new OnItemLongClickListener() {
+
+			@Override
+			public boolean onItemLongClick(AdapterView<?> parent,
+					View view, int position, long id) {
+				deleteBookmark(list.get(position),position,list);
+				return false;
+			}
+		});
+	}
+	public void deleteBookmark(String bookmarkName,final int position,final List<String> list)
+	{
+		try
+		{
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setCancelable(false);
+			builder.setTitle("Delete Bookmark");
+			builder.setMessage("Delete bookmark " + bookmarkName);
+
+			builder.setInverseBackgroundForced(true);
+			builder.setPositiveButton("Yes",new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog,int id) {
+					Dao<BookmarksORM, Integer> bookmarkDao = null;
+					DatabaseHelper dbHelper = OpenHelperManager
+							.getHelper(getApplicationContext(),
+									DatabaseHelper.class);
+					List<BookmarksORM> bookmarks = null;
+					try {
+						bookmarkDao= dbHelper
+								.getBookmarkDao();
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					try {
+						bookmarks = bookmarkDao.queryForAll();
+					} catch (SQLException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+
+
+					DeleteBuilder<BookmarksORM, Integer> deleteBuilder = bookmarkDao
+							.deleteBuilder();
+					try {
+						deleteBuilder.where().eq("bookmarkPageNum", bookmarks.get(position).getBookmarkPageNum());
+						Log.e("Delete", ""+deleteBuilder.where().eq("bookmarkPageNum", bookmarks.get(position).getBookmarkPageNum()));
+
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					try {
+						deleteBuilder.delete();
+
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					try {
+						list.remove(position);
+						adapter.notifyDataSetChanged();
+					} catch (Exception e) {
+						// TODO: handle exception
+					}
+
+				}
+			})
+			.setNegativeButton("No",new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog,int id) {
+					// if this button is clicked, just close
+					// the dialog box and do nothing
+					dialog.cancel();
+				}
+			});
+
+			// create alert dialog
+			AlertDialog alertDialog = builder.create();
+			alertDialog.show();
+
+			// show it
+			//builder.show();
+
+		}
+		catch (Exception e) {
+			// TODO: handlerMessageBackup exception
+			e.getStackTrace();
+		}
+
 	}
 }
