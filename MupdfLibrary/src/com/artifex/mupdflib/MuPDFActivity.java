@@ -77,7 +77,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	private final int FILEPICK_REQUEST = 2;
 	private final int PAGE_CHOICE_REQUEST = 3;
 	private  int currentPageNumber =0;
-	private MuPDFCore core;
+	private MuPDFCore core; 
 	private String mFileName;
 	private String  fileNameUri;
 	private String mDocName;
@@ -532,6 +532,46 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			protected void onMoveToChild(int i) {
 				updatePageNumView(i);
 				currentPageNumber = i;
+				Dao<BookmarksORM, Integer> bookmarkDao = null;
+				DatabaseHelper dbHelper = OpenHelperManager
+						.getHelper(getApplicationContext(),
+								DatabaseHelper.class);
+				String[] splitedfileName = fileNameUri.split("/");
+				int pageNum = i+1;
+				String fileName = splitedfileName[7] + "_" + pageNum;
+				Log.i("", "FileName: "+fileName);
+				try {
+					bookmarkDao= dbHelper
+							.getBookmarkDao();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				
+				try {
+					List<BookmarksORM> bookmarks = bookmarkDao.queryForAll();
+					for (int j = 0; j < bookmarks.size(); j++) {
+						Log.e("", "FileName: "+bookmarks.get(j).getBookmarkPageNum());
+						if(bookmarks.get(j).getBookmarkPageNum().contains(fileName))
+						{
+							
+							mBookmarkButton.setImageDrawable(getResources().getDrawable(R.drawable.toolbar_ic_bookmark_active));
+							
+							Log.i("", "Pages: "+bookmarks.get(j).getBookmarkPageNum().contains(fileName));
+							break;
+						}
+						else
+						{
+							mBookmarkButton.setImageDrawable(getResources().getDrawable(R.drawable.toolbar_ic_bookmark_inactive));
+						}
+						Log.e("", "Pages: "+bookmarks.get(j).getBookmarkPageNum());
+					}
+					bookmarkDao.closeLastIterator();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				//if (core == null)
 				//	return;
 				//mPageNumberView.setText(String.format("%d / %d", i + 1,
@@ -668,7 +708,9 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 				}
 
 				try {
+					currentPageNumber++;
 					bookmarkDao.create(new BookmarksORM(fileName+"_"+currentPageNumber, System.currentTimeMillis()));
+					mBookmarkButton.setImageDrawable(getResources().getDrawable(R.drawable.toolbar_ic_bookmark_active));
 					List<BookmarksORM> bookmarks = bookmarkDao.queryForAll();
 					for (int i = 0; i < bookmarks.size(); i++) {
 						Log.e("", "Pages: "+bookmarks.get(i).getBookmarkPageNum());
@@ -1421,8 +1463,8 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			public void onItemClick(AdapterView<?> parent, View view,
 					int position, long id) {
 				dialogBookmarks.cancel();
-				String[] splitPageNim = list.get(position).split("_");
-				String pageNum = splitPageNim[1];
+				String[] splitPageNum = list.get(position).split("_");
+				String pageNum = splitPageNum[1];
 				mDocView.setDisplayedViewIndex(Integer.parseInt(pageNum)-1);
 				updatePageNumView(Integer.parseInt(pageNum)-1);
 
