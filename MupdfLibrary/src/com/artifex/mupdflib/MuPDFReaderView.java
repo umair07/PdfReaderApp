@@ -95,8 +95,16 @@ public class MuPDFReaderView extends ReaderView {
 
 						@Override
 						public void visitExternal(LinkInfoExternal li) {
-							Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(li.url));
-							mContext.startActivity(intent);
+							try {
+								Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(li.url));
+								mContext.startActivity(intent);
+							} catch (Exception e2) {
+								// TODO: handle exception
+								String url ="http://"+li.url+"/";
+								Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+								mContext.startActivity(intent);
+							}
+							
 						}
 
 						@Override

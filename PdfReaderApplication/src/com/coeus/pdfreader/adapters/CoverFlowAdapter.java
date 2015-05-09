@@ -32,7 +32,7 @@ public class CoverFlowAdapter extends FancyCoverFlowAdapter {
     // Private members
     // =============================================================================
 
-    private int[] images = {R.drawable.cover_4, R.drawable.cover_2, R.drawable.cover_1, R.drawable.cover_3,};
+    private int[] cover_images = {R.drawable.android_cover, R.drawable.cpp_cover, R.drawable.csharp_cover, R.drawable.java_cover,};
 
     // =============================================================================
     // Supertype overrides
@@ -40,12 +40,12 @@ public class CoverFlowAdapter extends FancyCoverFlowAdapter {
 
     @Override
     public int getCount() {
-        return images.length;
+        return cover_images.length;
     }
 
     @Override
     public Integer getItem(int i) {
-        return images[i];
+        return cover_images[i];
     }
 
     @Override
@@ -55,19 +55,19 @@ public class CoverFlowAdapter extends FancyCoverFlowAdapter {
 
     @Override
     public View getCoverFlowItem(int position, View reuseableView, ViewGroup viewGroup) {
-        ImageView imageView = null;
+        ImageView imageView_cover = null;
 
         if (reuseableView != null) {
-            imageView = (ImageView) reuseableView;
+            imageView_cover = (ImageView) reuseableView;
         } else {
-            imageView = new ImageView(viewGroup.getContext());
-            imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            imageView.setLayoutParams(new FancyCoverFlow.LayoutParams(600,LayoutParams.WRAP_CONTENT));
-            imageView.setPadding(20, 0, 20, 0);
+            imageView_cover = new ImageView(viewGroup.getContext());
+            imageView_cover.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            imageView_cover.setLayoutParams(new FancyCoverFlow.LayoutParams(600,LayoutParams.WRAP_CONTENT));
+            imageView_cover.setPadding(20, 0, 20, 0);
 
         }
 
-        imageView.setImageResource(this.getItem(position));
-        return imageView;
+        imageView_cover.setImageResource(this.getItem(position));
+        return imageView_cover;
     }
 }

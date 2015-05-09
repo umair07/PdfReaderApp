@@ -475,7 +475,7 @@ public class MuPDFCore {
 		LinkInfo[] rightPageLinkInfo = new LinkInfo[0];
 		LinkInfo[] combinedLinkInfo;
 		int combinedSize = 0;
-		int rightPage = page * 2;
+		int rightPage = page * 2; 
 		int leftPage = rightPage - 1;
 		int count = countPages() * 2;
 		if( leftPage > 0 ) {

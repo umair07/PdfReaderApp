@@ -52,7 +52,7 @@ ChangeFragmentListener
 	}
 	@Override
 	public void changeFramgent(Fragment fragment, boolean addToBackStack) {
-		
+		replaceFramgment(fragment, addToBackStack);
 	}
 	
 }

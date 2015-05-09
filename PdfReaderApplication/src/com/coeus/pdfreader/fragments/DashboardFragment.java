@@ -7,10 +7,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.AssetManager;
+import android.content.res.Resources;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -25,6 +29,9 @@ import android.widget.Button;
 import at.technikum.mti.fancycoverflow.FancyCoverFlow;
 
 import com.artifex.mupdflib.MuPDFActivity;
+import com.artifex.mupdflib.MuPDFCore;
+import com.artifex.mupdflib.PDFPreviewGridActivityData;
+import com.artifex.mupdflib.SearchTaskResult;
 import com.coeus.pdfreader.R;
 import com.coeus.pdfreader.adapters.CoverFlowAdapter;
 
@@ -34,7 +41,7 @@ public class DashboardFragment extends Fragment implements OnClickListener
 	View rootView;
 	private FancyCoverFlow fancyCoverFlow;
 	Button btnDashboardOpenFile;
-	String[] filelist;
+	String[] fileList;
 	private int coverNumber = 0;
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -44,6 +51,22 @@ public class DashboardFragment extends Fragment implements OnClickListener
 		this.fancyCoverFlow = (FancyCoverFlow) rootView.findViewById(R.id.fancyCoverFlow);
 		loadUIComponents();
 		registerClickListners();
+	
+		AssetManager assetManager = getActivity().getAssets();
+		try {
+			fileList = assetManager.list("pdf");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		copyAssets();
+		setCoverFlow();
+	
+		return rootView;
+
+	}
+	private void setCoverFlow()
+	{
 		this.fancyCoverFlow.setAdapter(new CoverFlowAdapter());
 		this.fancyCoverFlow.setUnselectedAlpha(1.0f);
 		this.fancyCoverFlow.setUnselectedSaturation(0.0f);
@@ -52,14 +75,6 @@ public class DashboardFragment extends Fragment implements OnClickListener
 		this.fancyCoverFlow.setMaxRotation(0);
 		this.fancyCoverFlow.setScaleDownGravity(0.2f);
 		this.fancyCoverFlow.setActionDistance(FancyCoverFlow.ACTION_DISTANCE_AUTO);
-		AssetManager assetManager = getActivity().getAssets();
-		try {
-			filelist = assetManager.list("pdf");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		copyAssets();
 		fancyCoverFlow.setOnItemSelectedListener(new OnItemSelectedListener() {
 
 			@Override
@@ -75,8 +90,6 @@ public class DashboardFragment extends Fragment implements OnClickListener
 				coverNumber =0;
 			}
 		});
-		return rootView;
-
 	}
 	private void registerClickListners() {
 
@@ -92,10 +105,10 @@ public class DashboardFragment extends Fragment implements OnClickListener
 
 		case R.id.btnOpenFile:
 			String DestinationFile = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "mypdf/";
-						Uri uri = Uri.parse("file://"+DestinationFile +filelist[coverNumber].toString());
+						Uri filePathUri = Uri.parse("file://"+DestinationFile +fileList[coverNumber].toString());
 						Intent intent = new Intent(getActivity(),MuPDFActivity.class);
 						intent.setAction(Intent.ACTION_VIEW);
-						intent.setData(uri);
+						intent.setData(filePathUri);
 						startActivity(intent);
 
 			break;
