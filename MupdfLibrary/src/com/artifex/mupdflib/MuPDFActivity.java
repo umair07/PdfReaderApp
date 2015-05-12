@@ -3,6 +3,9 @@ package com.artifex.mupdflib;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -85,7 +88,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	private MuPDFReaderView mDocView;
 	private View mButtonsView;
 	private boolean mButtonsVisible;
-	ArrayAdapter<String> adapter;
+	ArrayAdapter<String> adapterBookmarkList;
 	// private EditText mPasswordView;
 	// private TextView mFilenameView;
 	///private SeekBar mPageSlider;
@@ -691,36 +694,9 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 
 			@Override
 			public void onClick(View v) {
-				Dao<BookmarksORM, Integer> bookmarkDao = null;
-				DatabaseHelper dbHelper = OpenHelperManager
-						.getHelper(getApplicationContext(),
-								DatabaseHelper.class);
-				String[] splitedfileName = fileNameUri.split("/");
-				String fileName = splitedfileName[7];
-
-
-				try {
-					bookmarkDao= dbHelper
-							.getBookmarkDao();
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-				try {
-					currentPageNumber++;
-					bookmarkDao.create(new BookmarksORM(fileName+"_"+currentPageNumber, System.currentTimeMillis()));
-					mBookmarkButton.setImageDrawable(getResources().getDrawable(R.drawable.toolbar_ic_bookmark_active));
-					List<BookmarksORM> bookmarks = bookmarkDao.queryForAll();
-					for (int i = 0; i < bookmarks.size(); i++) {
-						Log.e("", "Pages: "+bookmarks.get(i).getBookmarkPageNum());
-					}
-					bookmarkDao.closeLastIterator();
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
+				
+				// function for setting bookmarks
+				setBookmarks();
 			}
 		});
 
@@ -730,47 +706,10 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 
 			@Override
 			public void onClick(View v) {
-
-				List<String> bookmarksList = new ArrayList<String>();
-				Dao<BookmarksORM, Integer> bookmarkDao = null;
-				DatabaseHelper dbHelper = OpenHelperManager
-						.getHelper(getApplicationContext(),
-								DatabaseHelper.class);
-
-				String[] splitedfileName = fileNameUri.split("/");
-				String fileName = splitedfileName[7];
-
-
-				try {
-					bookmarkDao= dbHelper
-							.getBookmarkDao();
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-				try {
-					List<BookmarksORM> bookmarks = bookmarkDao.queryForAll();
-					for (int i = 0; i < bookmarks.size(); i++) {
-						if(bookmarks.get(i).getBookmarkPageNum().contains(fileName))
-						{
-							bookmarksList.add(bookmarks.get(i).getBookmarkPageNum());
-						}
-						Log.e("", "Pages: "+bookmarks.get(i).getBookmarkPageNum());
-					}
-					bookmarkDao.closeLastIterator();
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-				if(bookmarksList.size()>0)
-				{
-				showBookMarksList(bookmarksList);
-				}else
-				{
-					Toast.makeText(getApplicationContext(), "No Bookmarks found.", Toast.LENGTH_SHORT).show();
-				}
+				
+				//method for showing bookmarks
+				showBookmarks();
+				
 			}
 		});
 
@@ -928,6 +867,8 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		//layout.setBackgroundResource(R.color.canvas);
 		setContentView(layout);
 	}
+
+	
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -1439,7 +1380,10 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		//startActivityForResult(intent, FILEPICK_REQUEST);
 	}
 
-	public void showBookMarksList(final List<String> list)
+	//*********************************************************************** showBookMarksList **********************************************//
+	
+	
+	public void showBookMarksList(final List<String> list_FileName)
 	{
 		final Dialog dialogBookmarks;
 		ListView listViewBookmarks;
@@ -1453,17 +1397,30 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		Display display = getWindowManager().getDefaultDisplay();
 		int width = display.getWidth();
 		listViewBookmarks = (ListView) viewList.findViewById(R.id.listviewBookmarks);
-		listViewBookmarks.setBackgroundResource(R.color.blue);		
-		adapter = (new ArrayAdapter<String>( this,android.R.layout.simple_list_item_1,list));
-		listViewBookmarks.setAdapter(adapter);
-
+		listViewBookmarks.setBackgroundResource(R.color.black);	
+		
+		adapterBookmarkList = (new ArrayAdapter<String>( this,android.R.layout.simple_list_item_1,list_FileName));
+		listViewBookmarks.setAdapter(adapterBookmarkList);
+//		Collections.sort(list, new Comparator<String>(){
+//			  public int compare(String value_1, String value_2) {
+//			    return value_1.compareToIgnoreCase(value_2);
+//			  }
+//			});
+		Collections.sort(list_FileName, new Comparator<String>() {
+	        @SuppressLint("NewApi")
+			public int compare(String s1, String s2) {
+	            int i1 = Integer.parseInt(s1.replaceAll("\\D", ""));
+	            int i2 = Integer.parseInt(s2.replaceAll("\\D", ""));
+	            return Integer.compare(i1, i2);
+	        }
+	    });
 		listViewBookmarks.setOnItemClickListener(new OnItemClickListener() {
 
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view,
 					int position, long id) {
 				dialogBookmarks.cancel();
-				String[] splitPageNum = list.get(position).split("_");
+				String[] splitPageNum = list_FileName.get(position).split("o.");
 				String pageNum = splitPageNum[1];
 				mDocView.setDisplayedViewIndex(Integer.parseInt(pageNum)-1);
 				updatePageNumView(Integer.parseInt(pageNum)-1);
@@ -1475,12 +1432,19 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			@Override
 			public boolean onItemLongClick(AdapterView<?> parent,
 					View view, int position, long id) {
-				deleteBookmark(list.get(position),position,list);
+				deleteBookmark(list_FileName.get(position),position,list_FileName);
 				return false;
 			}
 		});
 	}
-	public void deleteBookmark(String bookmarkName,final int position,final List<String> list)
+	
+	
+	//*************************************************************************** End Method ******************************************//
+
+	//********************************************************************************* deleteBookmark ************************************//
+
+	
+	public void deleteBookmark(String bookmarkName,final int position,final List<String> list_FileName)
 	{
 		try
 		{
@@ -1505,6 +1469,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 						e.printStackTrace();
 					}
 					try {
+						
 						bookmarks = bookmarkDao.queryForAll();
 					} catch (SQLException e1) {
 						// TODO Auto-generated catch block
@@ -1516,6 +1481,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 							.deleteBuilder();
 					try {
 						deleteBuilder.where().eq("bookmarkPageNum", bookmarks.get(position).getBookmarkPageNum());
+						mBookmarkButton.setImageDrawable(getResources().getDrawable(R.drawable.toolbar_ic_bookmark_inactive));
 						Log.e("Delete", ""+deleteBuilder.where().eq("bookmarkPageNum", bookmarks.get(position).getBookmarkPageNum()));
 
 					} catch (SQLException e) {
@@ -1530,8 +1496,8 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 						e.printStackTrace();
 					}
 					try {
-						list.remove(position);
-						adapter.notifyDataSetChanged();
+						list_FileName.remove(position);
+						adapterBookmarkList.notifyDataSetChanged();
 					} catch (Exception e) {
 						// TODO: handle exception
 					}
@@ -1560,4 +1526,152 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		}
 
 	}
+	//**************************************************************************** End Method *****************************************//
+
+	//***************************************************************************** setBookmarks ***********************************//
+
+	//For marking bookmarks
+	private void setBookmarks()
+	{
+
+		String[] splitedfileName = fileNameUri.split("/");
+		String fileName = splitedfileName[7];
+		int fileNameExsist = 0;
+		Dao<BookmarksORM, Integer> bookmarkDao = null;
+		DatabaseHelper dbHelper = OpenHelperManager
+				.getHelper(getApplicationContext(),
+						DatabaseHelper.class);
+//		String[] splitedfileName = fileNameUri.split("/");
+//		String fileName = splitedfileName[7];
+		
+
+		try {
+			bookmarkDao= dbHelper
+					.getBookmarkDao();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		List<BookmarksORM> bookmarks = null;
+		try {
+			bookmarks = bookmarkDao.queryForAll();
+			currentPageNumber = mDocView.getDisplayedViewIndex();
+			currentPageNumber++;
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		for (int i = 0; i < bookmarks.size(); i++) {
+			String fullFileName = fileName+"_"+currentPageNumber;
+			if(bookmarks.get(i).getBookmarkPageNum().equals(fullFileName))
+			{
+				fileNameExsist =1;
+				break;
+			}
+			
+			
+		}
+		
+		if(fileNameExsist==0)
+		{
+		try {
+			fileNameExsist=0;
+//			currentPageNumber++;
+			bookmarkDao.create(new BookmarksORM(fileName+"_"+currentPageNumber, System.currentTimeMillis()));
+			mBookmarkButton.setImageDrawable(getResources().getDrawable(R.drawable.toolbar_ic_bookmark_active));
+			
+			bookmarkDao.closeLastIterator();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		}
+		else if(fileNameExsist ==1)
+		{
+			fileNameExsist=0;
+
+			DeleteBuilder<BookmarksORM, Integer> deleteBuilder = bookmarkDao
+					.deleteBuilder();
+			try {
+				deleteBuilder.where().eq("bookmarkPageNum",fileName+"_"+currentPageNumber);
+				mBookmarkButton.setImageDrawable(getResources().getDrawable(R.drawable.toolbar_ic_bookmark_inactive));
+				Log.e("Delete", ""+deleteBuilder.where().eq("bookmarkPageNum", fileName+"_"+currentPageNumber));
+
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			try {
+				deleteBuilder.delete();
+				bookmarkDao.closeLastIterator();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			try {
+				adapterBookmarkList.notifyDataSetChanged();
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+			
+		
+		}
+	}
+	//********************************************************************** End Method ***********************************************//
+	
+	
+	//*********************************************************************** showBookmarks ********************************************//
+
+	// Method For Showing Bookmarks
+	private void showBookmarks() {
+		// TODO Auto-generated method stub
+
+
+		List<String> bookmarksList = new ArrayList<String>();
+		Dao<BookmarksORM, Integer> bookmarkDao = null;
+		DatabaseHelper dbHelper = OpenHelperManager
+				.getHelper(getApplicationContext(),
+						DatabaseHelper.class);
+
+		String[] splitedfileName = fileNameUri.split("/");
+		String fileName = splitedfileName[7];
+
+
+		try {
+			bookmarkDao= dbHelper
+					.getBookmarkDao();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		try {
+			List<BookmarksORM> bookmarks = bookmarkDao.queryForAll();
+			for (int i = 0; i < bookmarks.size(); i++) {
+				if(bookmarks.get(i).getBookmarkPageNum().contains(fileName))
+				{
+					String[] splitedPagenum = bookmarks.get(i).getBookmarkPageNum().split("_");
+					String pagenum = splitedPagenum[1];
+					bookmarksList.add("PageNo." + pagenum);
+				}
+				Log.e("", "Pages: "+bookmarks.get(i).getBookmarkPageNum());
+			}
+			bookmarkDao.closeLastIterator();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		if(bookmarksList.size()>0)
+		{
+			
+		showBookMarksList(bookmarksList);
+		}else
+		{
+			Toast.makeText(getApplicationContext(), "No Bookmarks found.", Toast.LENGTH_SHORT).show();
+		}
+	
+	}
+	//**************************************************************** End Class *****************************************************//
+
 }

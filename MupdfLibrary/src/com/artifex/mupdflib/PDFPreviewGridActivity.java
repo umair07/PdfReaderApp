@@ -36,7 +36,7 @@ public class PDFPreviewGridActivity extends Activity {
 
 		mAdapter = new PDFPreviewGridAdapter(this, mCore, mPosition);
 		mGrid.setAdapter(mAdapter);
-		mGrid.smoothScrollToPosition(mPosition);
+		mGrid.setSelection(mPosition);
 	}
 
 	public void OnCancelPreviewButtonClick(View v) {
