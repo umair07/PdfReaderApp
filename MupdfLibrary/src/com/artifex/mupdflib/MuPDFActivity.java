@@ -1391,7 +1391,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		viewList = this.getLayoutInflater().inflate(R.layout.listview_bookmarks,null);
 		dialogBookmarks = new Dialog(this);
-		dialogBookmarks.setTitle("BookMarks");
+		dialogBookmarks.setTitle("Bookmarks");
 		dialogBookmarks.setContentView(viewList);        
 		dialogBookmarks.show();
 		Display display = getWindowManager().getDefaultDisplay();
@@ -1647,6 +1647,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 
 		try {
 			List<BookmarksORM> bookmarks = bookmarkDao.queryForAll();
+			
 			for (int i = 0; i < bookmarks.size(); i++) {
 				if(bookmarks.get(i).getBookmarkPageNum().contains(fileName))
 				{
