@@ -5,19 +5,20 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.AssetManager;
-import android.content.res.Resources;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.StrictMode;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,11 +30,11 @@ import android.widget.Button;
 import at.technikum.mti.fancycoverflow.FancyCoverFlow;
 
 import com.artifex.mupdflib.MuPDFActivity;
-import com.artifex.mupdflib.MuPDFCore;
-import com.artifex.mupdflib.PDFPreviewGridActivityData;
-import com.artifex.mupdflib.SearchTaskResult;
 import com.coeus.pdfreader.R;
 import com.coeus.pdfreader.adapters.CoverFlowAdapter;
+import com.coeus.pdfreader.model.PdfFileDataModel;
+import com.coeus.pdfreader.servicehandler.ServiceHandler;
+import com.coeus.pdfreader.utilities.AppConstants;
 
 @SuppressLint("NewApi")
 public class DashboardFragment extends Fragment implements OnClickListener
@@ -41,6 +42,7 @@ public class DashboardFragment extends Fragment implements OnClickListener
 	View rootView;
 	private FancyCoverFlow fancyCoverFlow;
 	Button btnDashboardOpenFile;
+	ArrayList<PdfFileDataModel> pdfFileDetailList;
 	String[] fileList;
 	private int coverNumber = 0;
 	@Override
@@ -49,9 +51,62 @@ public class DashboardFragment extends Fragment implements OnClickListener
 		// TODO Auto-generated method stub
 		rootView = inflater.inflate(R.layout.fragment_dashboard, container, false);
 		this.fancyCoverFlow = (FancyCoverFlow) rootView.findViewById(R.id.fancyCoverFlow);
+		pdfFileDetailList =  new ArrayList<PdfFileDataModel>();
 		loadUIComponents();
 		registerClickListners();
-	
+		fixNetworkRestrictions();
+
+
+
+		pdfBooksDataApiCall();
+		getPdfFilesList();
+		copyAssets();
+		setCoverFlow();
+
+		return rootView;
+
+	}
+
+	private void fixNetworkRestrictions()
+	{
+		if (android.os.Build.VERSION.SDK_INT > 9) {
+			StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+			StrictMode.setThreadPolicy(policy);
+		}
+	}
+	private void pdfBooksDataApiCall() {
+
+		ServiceHandler serviceHandler;
+		String jasonResponse = null;
+		try{
+			serviceHandler = new ServiceHandler();
+			if(AppConstants.isConnectingToInternet(getActivity()))
+			{
+				jasonResponse = serviceHandler.makeServiceCall(
+						AppConstants.pdfBooksDataJasonUrl,
+						ServiceHandler.GET);
+				JSONArray jasonPdfArray = new JSONArray(jasonResponse);
+				
+				for (int j = 0; j < jasonPdfArray.length(); j++) {
+					
+					pdfFileDetailList.add(new PdfFileDataModel( new JSONObject(
+							jasonPdfArray.getString(j))));
+				}
+				Log.e("Exception in APi Call",""+jasonResponse);
+
+
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			Log.e("Exception in APi Call",""+e.getStackTrace());
+
+		}
+	}
+
+
+
+	private void getPdfFilesList()
+	{
 		AssetManager assetManager = getActivity().getAssets();
 		try {
 			fileList = assetManager.list("pdf");
@@ -59,11 +114,6 @@ public class DashboardFragment extends Fragment implements OnClickListener
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		copyAssets();
-		setCoverFlow();
-	
-		return rootView;
-
 	}
 	private void setCoverFlow()
 	{
@@ -80,7 +130,7 @@ public class DashboardFragment extends Fragment implements OnClickListener
 			@Override
 			public void onItemSelected(AdapterView<?> parent, View view,
 					int position, long id) {
-				
+
 				coverNumber =position;
 			}
 
@@ -105,11 +155,11 @@ public class DashboardFragment extends Fragment implements OnClickListener
 
 		case R.id.btnOpenFile:
 			String DestinationFile = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "mypdf/";
-						Uri filePathUri = Uri.parse("file://"+DestinationFile +fileList[coverNumber].toString());
-						Intent intent = new Intent(getActivity(),MuPDFActivity.class);
-						intent.setAction(Intent.ACTION_VIEW);
-						intent.setData(filePathUri);
-						startActivity(intent);
+			Uri filePathUri = Uri.parse("file://"+DestinationFile +fileList[coverNumber].toString());
+			Intent intent = new Intent(getActivity(),MuPDFActivity.class);
+			intent.setAction(Intent.ACTION_VIEW);
+			intent.setData(filePathUri);
+			startActivity(intent);
 
 			break;
 
@@ -135,18 +185,18 @@ public class DashboardFragment extends Fragment implements OnClickListener
 				file.mkdir();
 
 			}
-			
-				try {
 
-					CopyFromAssetsToStorage(Context, "pdf/" +files[i], DestinationFile+files[i]);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			
+			try {
+
+				CopyFromAssetsToStorage(Context, "pdf/" +files[i], DestinationFile+files[i]);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 
 		}
-		}
+	}
 
 
 	private void CopyFromAssetsToStorage(Context Context, String SourceFile, String DestinationFile) throws IOException {
