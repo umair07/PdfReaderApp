@@ -7,11 +7,9 @@ import android.content.Context;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.coeus.pdfreader.R;
 import com.coeus.pdfreader.model.PdfFileDataModel;
@@ -53,6 +51,8 @@ public class ExpandableListAdapter  extends BaseExpandableListAdapter {
 	  if (convertView == null) {
 	   convertView = minflater.inflate(R.layout.expandable_lv_child, null);
 	  }
+	  
+	  
 	  text = (TextView) convertView.findViewById(R.id.txt_Child_Item_Name);
 	  text.setClickable(false);
 	  text.setText(Childtem.get(childPosition));
@@ -95,6 +95,7 @@ public class ExpandableListAdapter  extends BaseExpandableListAdapter {
 	   convertView = minflater.inflate(R.layout.expandable_lv_group, null);
 	  }
 	  TextView text = (TextView) convertView.findViewById(R.id.txt_Group_Item_Name);
+	  
 	  text.setText(groupItem.get(groupPosition).getBookTitle());
 	  text.setClickable(false);
 	  if(isExpanded)

@@ -1,10 +1,10 @@
 package com.coeus.pdfreader;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
+
 import com.coeus.pdfreader.fragments.DashboardFragment;
 import com.coeus.pdfreader.listener.ChangeFragmentListener;
 
@@ -22,7 +22,7 @@ ChangeFragmentListener
 		replaceFramgment(new DashboardFragment(), true);
 	}
 
-	@SuppressLint("NewApi")
+	
 	public void replaceFramgment(Fragment fragment, boolean addToBackStack) {
 		FragmentManager mngr = getFragmentManager();
 		FragmentTransaction ft = mngr.beginTransaction();
@@ -35,10 +35,8 @@ ChangeFragmentListener
 
 	}
 	
-	@SuppressLint("NewApi")
 	@Override
 	public void onBackPressed() {
-		// TODO Auto-generated method stub
 		super.onBackPressed();
 		try {
 			FragmentManager fm = getFragmentManager();

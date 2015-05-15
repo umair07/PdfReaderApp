@@ -1,41 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" 
-    android:background="@color/white">
-    
-     <at.technikum.mti.fancycoverflow.FancyCoverFlow
+    android:layout_height="match_parent"
+    android:background="@color/white" >
+
+    <at.technikum.mti.fancycoverflow.FancyCoverFlow
         android:id="@+id/fancyCoverFlow"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/btnOpenFile"
         android:layout_marginBottom="10dp"
-        
-        />
-      <Button 
-         android:id="@+id/btnBookmarks"
+        android:layout_marginTop="90dp" />
+
+    <Button
+        android:id="@+id/btnBookmarks"
         android:layout_width="90dp"
         android:layout_height="40dp"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
-        android:layout_marginTop="20dp"
         android:layout_marginRight="10dp"
-        android:text="@string/open_bookmarks"
-        android:textSize="15sp"
-        android:textColor="@color/white"
+        android:layout_marginTop="20dp"
         android:background="@drawable/selector_open_file"
-         />
-     <Button 
-         android:id="@+id/btnOpenFile"
+        android:text="@string/open_bookmarks"
+        android:textColor="@color/white"
+        android:textSize="15sp" />
+
+    <Button
+        android:id="@+id/btnOpenFile"
         android:layout_width="300dp"
         android:layout_height="60dp"
-        android:layout_centerHorizontal="true"
         android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
         android:layout_marginBottom="30dp"
-        android:text="@string/open_file"
-        android:textSize="25sp"
-        android:textColor="@color/white"
         android:background="@drawable/selector_open_file"
-         />
+        android:text="@string/open_file"
+        android:textColor="@color/white"
+        android:textSize="25sp" />
 
 </RelativeLayout>

@@ -31,9 +31,6 @@ public class UnzipFileUtil  {
 	          _dirChecker(ze.getName()); 
 	        } else { 
 	          FileOutputStream fout = new FileOutputStream(_location + ze.getName()); 
-	       //   for (int c = zin.read(); c != -1; c = zin.read()) { 
-	         //   fout.write(c); 
-
 
 	            byte[] buffer = new byte[8192];
 	             int len;
@@ -42,10 +39,7 @@ public class UnzipFileUtil  {
 	             }
 	             fout.close();
 
-	        //  } 
-
 	          zin.closeEntry(); 
-	         // fout.close(); 
 	        } 
 
 	      } 

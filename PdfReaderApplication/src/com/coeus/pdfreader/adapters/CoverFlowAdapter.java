@@ -77,7 +77,7 @@ public class CoverFlowAdapter extends FancyCoverFlowAdapter {
             imageView_cover = (ImageView) reuseableView;
         } else {
             imageView_cover = new ImageView(viewGroup.getContext());
-            imageView_cover.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            imageView_cover.setScaleType(ImageView.ScaleType.CENTER);
             imageView_cover.setLayoutParams(new FancyCoverFlow.LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.MATCH_PARENT));
             imageView_cover.setPadding(20, 20, 20, 0);
 

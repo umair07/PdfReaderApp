@@ -1,5 +1,6 @@
 package com.coeus.pdfreader.fragments;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +10,8 @@ import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
@@ -22,6 +25,7 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.Button;
 import at.technikum.mti.fancycoverflow.FancyCoverFlow;
 
+import com.artifex.mupdflib.MuPDFActivity;
 import com.coeus.pdfreader.MainActivity;
 import com.coeus.pdfreader.R;
 import com.coeus.pdfreader.adapters.CoverFlowAdapter;
@@ -30,7 +34,7 @@ import com.coeus.pdfreader.ormlite.BookmarksORM;
 import com.coeus.pdfreader.ormlite.DatabaseHelper;
 import com.coeus.pdfreader.servicehandler.ServiceHandler;
 import com.coeus.pdfreader.utilities.AppConstants;
-import com.coeus.pdfreader.utilities.DownloadZipFileUtil;
+import com.coeus.pdfreader.utilities.DownloadZipPdfFileUtil;
 import com.j256.ormlite.android.apptools.OpenHelperManager;
 import com.j256.ormlite.dao.Dao;
 
@@ -40,38 +44,39 @@ public class DashboardFragment extends Fragment implements OnClickListener
 	View rootView;
 	private FancyCoverFlow fancyCoverFlow;
 	Button btnDashboardOpenFile,btnDashboardOpenBookmarkList;
-	ArrayList<PdfFileDataModel> pdfFileDetailList;
-	String[] fileList;
+	ArrayList<PdfFileDataModel> arrayListPdfFileDetail;
 	private int coverNumber = 0;
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
+
 		rootView = inflater.inflate(R.layout.fragment_dashboard, container, false);
 		this.fancyCoverFlow = (FancyCoverFlow) rootView.findViewById(R.id.fancyCoverFlow);
-		pdfFileDetailList =  new ArrayList<PdfFileDataModel>();
+		arrayListPdfFileDetail =  new ArrayList<PdfFileDataModel>();
 		loadUIComponents();
-		
 		registerClickListners();
 		fixNetworkRestrictions();
 		pdfBooksDataApiCall();
 		setCoverFlow();
-
 		return rootView;
 
 	}
 
 	private void fixNetworkRestrictions()
 	{
-		if (android.os.Build.VERSION.SDK_INT > 9) {
+		if (android.os.Build.VERSION.SDK_INT > 9) 
+		{
 			StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
 			StrictMode.setThreadPolicy(policy);
 		}
 	}
-	private void pdfBooksDataApiCall() {
-
+	private void pdfBooksDataApiCall() 
+	{
 		ServiceHandler serviceHandler;
 		String jasonResponse = null;
-		try{
+		try
+		{
 			serviceHandler = new ServiceHandler();
 			if(AppConstants.isConnectingToInternet(getActivity()))
 			{
@@ -79,24 +84,24 @@ public class DashboardFragment extends Fragment implements OnClickListener
 						AppConstants.pdfBooksDataJasonUrl,
 						ServiceHandler.GET);
 				JSONArray jasonPdfArray = new JSONArray(jasonResponse);
-				
+
 				for (int j = 0; j < jasonPdfArray.length(); j++) {
-					
-					pdfFileDetailList.add(new PdfFileDataModel( new JSONObject(
+
+					arrayListPdfFileDetail.add(new PdfFileDataModel( new JSONObject(
 							jasonPdfArray.getString(j))));
 				}
-				Log.e("Exception in APi Call",""+jasonResponse);
-			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			Log.e("Exception in APi Call",""+e.getStackTrace());
-
+				Log.e("Api Response: ",""+ jasonResponse);
+			} 
+		} 
+		catch (Exception e) 
+		{
+			Log.e("Exception in APi Call",""+ e.getStackTrace());
 		}
 	}
 
 	private void setCoverFlow()
 	{
-		this.fancyCoverFlow.setAdapter(new CoverFlowAdapter(pdfFileDetailList,getActivity()));
+		this.fancyCoverFlow.setAdapter(new CoverFlowAdapter(arrayListPdfFileDetail,getActivity()));
 		this.fancyCoverFlow.setUnselectedAlpha(1.0f);
 		this.fancyCoverFlow.setUnselectedSaturation(0.0f);
 		this.fancyCoverFlow.setUnselectedScale(0.5f);
@@ -110,87 +115,133 @@ public class DashboardFragment extends Fragment implements OnClickListener
 			public void onItemSelected(AdapterView<?> parent, View view,
 					int position, long id) {
 
-				coverNumber =position;
+				coverNumber = position;
 			}
 
 			@Override
 			public void onNothingSelected(AdapterView<?> parent) {
-				// TODO Auto-generated method stub
-				coverNumber =0;
+
+				coverNumber = 0;
 			}
 		});
 	}
-	private void registerClickListners() {
+	private void registerClickListners() 
+	{
 
 		rootView.setOnClickListener(this);
 		btnDashboardOpenFile.setOnClickListener(this);
 		btnDashboardOpenBookmarkList.setOnClickListener(this);
 	}
-	private void loadUIComponents() {
+	private void loadUIComponents() 
+	{
 		btnDashboardOpenFile = (Button) rootView.findViewById(R.id.btnOpenFile);
 		btnDashboardOpenBookmarkList = (Button) rootView.findViewById(R.id.btnBookmarks);
 	}
 	@Override
-	public void onClick(View v) {
-		switch (v.getId()) {
+	public void onClick(View v) 
+	{
+		switch (v.getId()) 
+		{
 
 		case R.id.btnOpenFile:
-			 DownloadZipFileUtil.createDir(Environment.getExternalStorageDirectory().toString(),AppConstants.folderName);
-			 DownloadZipFileUtil.createDir(AppConstants.filePath, AppConstants.subFolderName);
-	         String unzipLocation = AppConstants.filePath+"/"+AppConstants.subFolderName+"/";
-	         String zipFile =AppConstants.filePath+"/"+AppConstants.subFolderName+"/"+pdfFileDetailList.get(coverNumber).getPdfFileName();
-	         try {
-	             new DownloadZipFileUtil().downloadEventData(getActivity(),zipFile, unzipLocation, pdfFileDetailList.get(coverNumber).getBookUrl());
-	         } catch (Exception e) {
-	             // TODO Auto-generated catch block
-	             e.printStackTrace();
-	         }
-			
+			DownloadZipPdfFileUtil.createDir(Environment.getExternalStorageDirectory().toString(),AppConstants.folderName);
+			DownloadZipPdfFileUtil.createDir(AppConstants.filePath, AppConstants.subFolderName);
+			String unzipFileLocation = AppConstants.filePath+"/"+AppConstants.subFolderName+"/";
+			String zipFileLocation = AppConstants.filePath+"/"+AppConstants.subFolderName+"/"+arrayListPdfFileDetail.get(coverNumber).getPdfFileName();
 
-			break;
-			
-		case R.id.btnBookmarks:
-			try {
-				bookMarksLsit();
-			} catch (Exception e) {
-				// TODO: handle exception
+
+			try 
+			{
+				File file = new File(unzipFileLocation, arrayListPdfFileDetail.get(coverNumber).getPdfFileName() +".pdf" );
+				if (file.exists()) {
+					
+					String filePath = "file://"+unzipFileLocation+ arrayListPdfFileDetail.get(coverNumber).getPdfFileName() +".pdf";
+					try 
+					{
+						openPdfFile(filePath);
+					} catch (Exception e) 
+					{
+						Log.e("Open Pdf File Exception", "" + e.getStackTrace());
+					}
+					
+					
+				}
+				else
+				{
+					new DownloadZipPdfFileUtil().downloadEventData(getActivity(),zipFileLocation, 
+							unzipFileLocation, arrayListPdfFileDetail.get(coverNumber).getBookUrl());
+
+				}
+
+			} catch (Exception e) 
+			{
+				Log.e("Open Pdf File Exception", "" + e.getStackTrace());
 			}
-			
+			break;
+
+		case R.id.btnBookmarks:
+			try
+			{
+				showBookMarksListFromDb();
+			} catch (Exception e) {
+				Log.e("Show Bookmarks DashBorad", "" + e.getStackTrace());
+			}
 			break;
 		}
 
 	}
 
-	private void bookMarksLsit()
+	private void openPdfFile(String filePath) {
+		Uri filePathUri = Uri.parse(filePath);
+		Intent intent = new Intent(getActivity(),MuPDFActivity.class);
+		intent.setAction(Intent.ACTION_VIEW);
+		intent.setData(filePathUri);
+		startActivity(intent);
+	}
+
+	private void showBookMarksListFromDb()
+	{
+		List<BookmarksORM> bookmarksListFromDb = getBookmarkListFromDataBase();
+		try
+		{
+			ArrayList<String> bookmarksNameList  =  new ArrayList<String>();
+			for (int i = 0; i < bookmarksListFromDb.size(); i++)
+			{
+				bookmarksNameList.add(bookmarksListFromDb.get(i).getBookmarkPageNum());
+				Log.e("", "Pages: "+bookmarksListFromDb.get(i).getBookmarkPageNum());
+			}
+
+			MainActivity.changeFragmentListener.changeFramgent(new BookmarksListFragment(arrayListPdfFileDetail,bookmarksNameList), true);
+
+		}
+		catch (Exception e) 
+		{
+			Log.e("showBookMarksListFromDb", "" + e.getStackTrace());
+		}
+	}
+
+	private List<BookmarksORM> getBookmarkListFromDataBase()
 	{
 		Dao<BookmarksORM, Integer> bookmarkDao = null;
+		List<BookmarksORM> bookmarksListDb = null;
 		DatabaseHelper dbHelper = OpenHelperManager
 				.getHelper(getActivity(),
 						DatabaseHelper.class);
-		try {
+		try 
+		{
 			bookmarkDao= dbHelper
 					.getBookmarkDao();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Log.e("getBookmarkListFromDataBase", "" + e.getStackTrace());
 		}
 		try {
-			List<BookmarksORM> bookmarks = bookmarkDao.queryForAll();
-			ArrayList<String> bookmarksName  =  new ArrayList<String>();
-			
-			for (int i = 0; i < bookmarks.size(); i++) {
-				
-				bookmarksName.add(bookmarks.get(i).getBookmarkPageNum());
-				Log.e("", "Pages: "+bookmarks.get(i).getBookmarkPageNum());
-			}
-		
-			MainActivity.changeFragmentListener.changeFramgent(new BookmarksListFragment(pdfFileDetailList,bookmarksName), true);
+			bookmarksListDb = bookmarkDao.queryForAll();
 			bookmarkDao.closeLastIterator();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (SQLException e) 
+		{
+			Log.e("getBookmarkListFromDataBase List Exception", "" + e.getStackTrace());
 		}
+		return bookmarksListDb;
 	}
-
 
 }
