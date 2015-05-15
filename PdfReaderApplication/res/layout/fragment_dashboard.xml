@@ -9,8 +9,11 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/btnOpenFile"
+        android:layout_below="@+id/btnBookmarks"
+        android:layout_centerVertical="true"
+        android:layout_marginTop="10dip"
         android:layout_marginBottom="10dp"
-        android:layout_marginTop="90dp" />
+        />
 
     <Button
         android:id="@+id/btnBookmarks"
