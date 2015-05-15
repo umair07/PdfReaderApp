@@ -3,12 +3,15 @@ package com.coeus.pdfreader.utilities;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Environment;
 
 public class AppConstants {
 
 	// PDF files Jason Url
 	public static String pdfBooksDataJasonUrl = "http://pdfreaderfileserver.comli.com/pdfbookjason.json";
-
+	public static String folderName = "PdfDownloads" ;
+	public static String filePath = Environment.getExternalStorageDirectory().toString()+"/"+folderName ;
+	public static String subFolderName = "PdfFiles";
 	// check connectivity
 	public static boolean isConnectingToInternet(Context pContext)
 	{

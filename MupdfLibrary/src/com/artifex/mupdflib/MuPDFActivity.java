@@ -541,7 +541,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 								DatabaseHelper.class);
 				String[] splitedfileName = fileNameUri.split("/");
 				int pageNum = i+1;
-				String fileName = splitedfileName[7] + "_" + pageNum;
+				String fileName = splitedfileName[8] + "_" + pageNum;
 				Log.i("", "FileName: "+fileName);
 				try {
 					bookmarkDao= dbHelper
@@ -1535,14 +1535,14 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	{
 
 		String[] splitedfileName = fileNameUri.split("/");
-		String fileName = splitedfileName[7];
+		String fileName = splitedfileName[8];
 		int fileNameExsist = 0;
 		Dao<BookmarksORM, Integer> bookmarkDao = null;
 		DatabaseHelper dbHelper = OpenHelperManager
 				.getHelper(getApplicationContext(),
 						DatabaseHelper.class);
 //		String[] splitedfileName = fileNameUri.split("/");
-//		String fileName = splitedfileName[7];
+//		String fileName = splitedfileName[8];
 		
 
 		try {
@@ -1634,7 +1634,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 						DatabaseHelper.class);
 
 		String[] splitedfileName = fileNameUri.split("/");
-		String fileName = splitedfileName[7];
+		String fileName = splitedfileName[8];
 
 
 		try {
@@ -1652,7 +1652,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 				if(bookmarks.get(i).getBookmarkPageNum().contains(fileName))
 				{
 					String[] splitedPagenum = bookmarks.get(i).getBookmarkPageNum().split("_");
-					String pagenum = splitedPagenum[1];
+					String pagenum = splitedPagenum[2];
 					bookmarksList.add("PageNo." + pagenum);
 				}
 				Log.e("", "Pages: "+bookmarks.get(i).getBookmarkPageNum());

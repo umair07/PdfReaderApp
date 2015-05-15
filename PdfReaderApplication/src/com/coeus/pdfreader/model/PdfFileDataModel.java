@@ -25,7 +25,19 @@ public class PdfFileDataModel {
 			e.printStackTrace();
 		}
 	}
-
+	public PdfFileDataModel(String  title) {
+		super();
+		try {
+		this.bookTitle = title;
+//		this.bookUrl = pdfListJsonObject.getString("bookUrl");
+//		this.coverUrl = pdfListJsonObject.getString("coverUrl");
+//		this.pdfFileName = pdfListJsonObject.getString("fileName");
+//		this.fileSize = pdfListJsonObject.getString("bookSize");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	public String getBookTitle() {
 		return bookTitle;
 	}

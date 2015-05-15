@@ -17,6 +17,9 @@
 
 package com.coeus.pdfreader.adapters;
 
+import java.util.ArrayList;
+
+import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -24,28 +27,41 @@ import android.widget.RelativeLayout.LayoutParams;
 import at.technikum.mti.fancycoverflow.FancyCoverFlow;
 import at.technikum.mti.fancycoverflow.FancyCoverFlowAdapter;
 
-import com.coeus.pdfreader.R;
+import com.coeus.pdfreader.imageloader.FileCache;
+import com.coeus.pdfreader.imageloader.ImageLoader;
+import com.coeus.pdfreader.imageloader.MemoryCache;
+import com.coeus.pdfreader.model.PdfFileDataModel;
 
 public class CoverFlowAdapter extends FancyCoverFlowAdapter {
 
     // =============================================================================
     // Private members
     // =============================================================================
-
-    private int[] cover_images = {R.drawable.android_cover, R.drawable.cpp_cover, R.drawable.csharp_cover, R.drawable.java_cover,};
+	ArrayList<PdfFileDataModel> pdfFileDetailList;
+	private ImageLoader imageLoader;
+//    private int[] cover_images = {R.drawable.android_cover, R.drawable.cpp_cover, R.drawable.csharp_cover, R.drawable.java_cover,};
 
     // =============================================================================
     // Supertype overrides
     // =============================================================================
 
-    @Override
+    public CoverFlowAdapter(ArrayList<PdfFileDataModel> pdfFileDetailList, Context pContext) {
+    	this.pdfFileDetailList = pdfFileDetailList;
+    	FileCache f = new FileCache(pContext);
+		MemoryCache m = new MemoryCache();
+		m.clear();
+		f.clear();
+    	imageLoader = new ImageLoader(pContext);
+	}
+
+	@Override
     public int getCount() {
-        return cover_images.length;
+        return pdfFileDetailList.size();
     }
 
     @Override
-    public Integer getItem(int i) {
-        return cover_images[i];
+    public String getItem(int i) {
+        return pdfFileDetailList.get(i).getCoverUrl();
     }
 
     @Override
@@ -61,13 +77,15 @@ public class CoverFlowAdapter extends FancyCoverFlowAdapter {
             imageView_cover = (ImageView) reuseableView;
         } else {
             imageView_cover = new ImageView(viewGroup.getContext());
-            imageView_cover.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            imageView_cover.setLayoutParams(new FancyCoverFlow.LayoutParams(600,LayoutParams.WRAP_CONTENT));
-            imageView_cover.setPadding(20, 0, 20, 0);
+            imageView_cover.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            imageView_cover.setLayoutParams(new FancyCoverFlow.LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.MATCH_PARENT));
+            imageView_cover.setPadding(20, 20, 20, 0);
 
         }
 
-        imageView_cover.setImageResource(this.getItem(position));
+        
+        imageLoader.DisplayImage(pdfFileDetailList.get(position).getCoverUrl(), imageView_cover);
+//        imageView_cover.setImageResource(this.getItem(position));
         return imageView_cover;
     }
 }

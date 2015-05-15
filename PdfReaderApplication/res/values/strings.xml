@@ -54,4 +54,5 @@
 	<string name="format_currently_not_supported">Format currently not supported</string>
 	<string name="toggle_reflow_mode">Toggle reflow mode</string>
 	<string name="open_file">Open File</string>
+	<string name="open_bookmarks">Bookmarks</string>
 </resources>
