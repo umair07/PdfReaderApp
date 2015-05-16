@@ -120,7 +120,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	private AsyncTask<Void, Void, MuPDFAlert> mAlertTask;
 	private AlertDialog mAlertDialog;
 	private FilePicker mFilePicker;
-
+	int pagenum=0;
 	public void createAlertWaiter() {
 		mAlertsActive = true;
 		// All mupdf library calls are performed on asynchronous tasks to avoid stalling
@@ -280,6 +280,8 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	}
 
 	private void setCurrentlyViewedPreview() {
+	
+		
 		int i = mDocView.getDisplayedViewIndex();
 		if (core.getDisplayPages() == 2) {
 			i = (i * 2) - 1;
@@ -342,6 +344,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 				Uri uri = intent.getData();
 				fileNameUri =uri.toString();
 				System.out.println("URI to open is: " + uri);
+				 pagenum = getIntent().getIntExtra("pageNum", 0);
 				if (uri.toString().startsWith("content://")) {
 					/*
 					// Handle view requests from the Transformer Prime's file
@@ -488,6 +491,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 				}
 			});
 			alert.show();
+		
 			return;
 		}
 
@@ -500,6 +504,13 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		}
 
 		createUI(savedInstanceState);
+		
+		if(pagenum!= 0)
+		{
+		mDocView.setDisplayedViewIndex(pagenum-1);
+		updatePageNumView(pagenum-1);
+		pagenum = 0;
+		}
 	}
 
 	/*
@@ -533,8 +544,11 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		mDocView = new MuPDFReaderView(this) {
 			@Override
 			protected void onMoveToChild(int i) {
+				
+				
 				updatePageNumView(i);
 				currentPageNumber = i;
+				
 				Dao<BookmarksORM, Integer> bookmarkDao = null;
 				DatabaseHelper dbHelper = OpenHelperManager
 						.getHelper(getApplicationContext(),

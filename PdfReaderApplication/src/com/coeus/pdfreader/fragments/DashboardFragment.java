@@ -3,24 +3,34 @@ package com.coeus.pdfreader.fragments;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
+import android.app.Dialog;
 import android.app.Fragment;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
 import android.util.Log;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.Toast;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.Button;
 import at.technikum.mti.fancycoverflow.FancyCoverFlow;
@@ -46,7 +56,7 @@ public class DashboardFragment extends Fragment implements OnClickListener
 	Button btnDashboardOpenFile,btnDashboardOpenBookmarkList;
 	ArrayList<PdfFileDataModel> arrayListPdfFileDetail;
 	private int coverNumber = 0;
-
+	String noBoommarkFoundMsg = "No Bookmarks Found";
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -158,7 +168,7 @@ public class DashboardFragment extends Fragment implements OnClickListener
 					String filePath = "file://"+unzipFileLocation+ arrayListPdfFileDetail.get(coverNumber).getPdfFileName() +".pdf";
 					try 
 					{
-						openPdfFile(filePath);
+						openPdfFile(filePath,0);
 					} catch (Exception e) 
 					{
 						Log.e("Open Pdf File Exception", "" + e.getStackTrace());
@@ -191,9 +201,13 @@ public class DashboardFragment extends Fragment implements OnClickListener
 
 	}
 
-	private void openPdfFile(String filePath) {
+	private void openPdfFile(String filePath,int pageNum) {
 		Uri filePathUri = Uri.parse(filePath);
 		Intent intent = new Intent(getActivity(),MuPDFActivity.class);
+		if(pageNum!=0)
+		{
+			intent.putExtra("pageNum", pageNum);
+		}
 		intent.setAction(Intent.ACTION_VIEW);
 		intent.setData(filePathUri);
 		startActivity(intent);
@@ -210,8 +224,14 @@ public class DashboardFragment extends Fragment implements OnClickListener
 				bookmarksNameList.add(bookmarksListFromDb.get(i).getBookmarkPageNum());
 				Log.e("", "Pages: "+bookmarksListFromDb.get(i).getBookmarkPageNum());
 			}
-
-			MainActivity.changeFragmentListener.changeFramgent(new BookmarksListFragment(arrayListPdfFileDetail,bookmarksNameList), true);
+			if(bookmarksNameList.size()>0)
+			{
+			showBookMarksList(bookmarksNameList);
+			}
+			else
+			{
+				Toast.makeText(getActivity(), noBoommarkFoundMsg, Toast.LENGTH_SHORT).show();
+			}
 
 		}
 		catch (Exception e) 
@@ -243,5 +263,45 @@ public class DashboardFragment extends Fragment implements OnClickListener
 		}
 		return bookmarksListDb;
 	}
+	public void showBookMarksList(final List<String> list_FileName)
+	{
+		final Dialog dialogBookmarks;
+		ListView listViewBookmarks;
+		View viewList;
+		LayoutInflater inflater = (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		viewList = getActivity().getLayoutInflater().inflate(R.layout.listview_bookmarks,null);
+		dialogBookmarks = new Dialog(getActivity());
+		dialogBookmarks.setTitle("Bookmarks");
+		dialogBookmarks.setContentView(viewList);        
+		dialogBookmarks.show();
+		Display display = getActivity().getWindowManager().getDefaultDisplay();
+		int width = display.getWidth();
+		listViewBookmarks = (ListView) viewList.findViewById(R.id.listviewBookmarks);
+		listViewBookmarks.setBackgroundResource(R.color.black);	
+		
+		ArrayAdapter<String> adapterBookmarkList = (new ArrayAdapter<String>( getActivity(),android.R.layout.simple_list_item_1,list_FileName));
+		listViewBookmarks.setAdapter(adapterBookmarkList);
+		
+		Collections.sort(list_FileName);
+		
+		listViewBookmarks.setOnItemClickListener(new OnItemClickListener() {
 
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				dialogBookmarks.cancel();
+				
+				String[] splitedNamePageNum = list_FileName.get(position).split("_");
+				String bookName = splitedNamePageNum[0] +"_"+splitedNamePageNum[1]; 
+				
+				String pagenum = splitedNamePageNum[2];
+				
+				String filePath = "file://"+AppConstants.filePath+"/"+AppConstants.subFolderName+"/"+ bookName;
+				openPdfFile(filePath,Integer.parseInt(pagenum));
+
+			}
+		});
+	}
+
+	
 }
