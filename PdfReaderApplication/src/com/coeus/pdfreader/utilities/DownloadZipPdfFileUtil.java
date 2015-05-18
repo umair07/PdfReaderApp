@@ -25,15 +25,18 @@ import javax.net.ssl.X509TrustManager;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.Gravity;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.artifex.mupdflib.MuPDFActivity;
 
@@ -43,6 +46,8 @@ public class DownloadZipPdfFileUtil {
 	String downloadingMessage = "Downloading Zip File..";
 	String extractZipFile = "Please Wait...Extracting zip file ... ";
 	String downloadCompleteMessage = "Downloading completed";
+	
+	
 	public static void createDir(String path,String dirName)
 	{
 		String newFolder = "/"+dirName;
@@ -78,6 +83,8 @@ public class DownloadZipPdfFileUtil {
 			this.zipFile=zipFile;
 			pdfFilePath = zipFile;
 			this.unzipLocation=unzipLocation;
+			context.registerReceiver(checkInternetConnection,
+					new IntentFilter("internetMessage"));
 		}
 		@Override
 		protected void onPreExecute() {
@@ -175,12 +182,45 @@ public class DownloadZipPdfFileUtil {
 			}
 			else
 			{
-				customAlert(context, errorMessage);
+//				customAlert(context, errorMessage);
 			}
 		}
+		private final BroadcastReceiver checkInternetConnection = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				try
+				{
+				String internetStatus = intent.getStringExtra("internetStatus");
+				if(internetStatus.equals("0"))
+				{
+					// show no internet popup
+			        Toast.makeText(context, AppConstants.internetMessage, Toast.LENGTH_LONG).show();
+
+					progressDialog.dismiss();
+					progressDialog.cancel();
+					customAlert(context, AppConstants.internetMessage);
+				}
+				else if(internetStatus.equals("1"))
+				{
+					
+					// wifi enabled
+					Toast.makeText(context, AppConstants.internetConnectedMessage, Toast.LENGTH_LONG).show();
+				}
+				else if(internetStatus.equals("2"))
+				{
+					Toast.makeText(context, AppConstants.internetConnectedMessage, Toast.LENGTH_LONG).show();
+
+					// mobile data enabled
+				}
+				} 
+				catch (Exception e) 
+				{
+					Log.e("Broadcast Receiver Exception: ", "" + e.getStackTrace());
+				}
+			}
+		};
 	}
-	@SuppressLint("NewApi")
-	public void customAlert(final Context context,String msgString)
+	public void customAlert(final Context context,final String msgString)
 	{
 		AlertDialog.Builder alertDialog2 = new AlertDialog.Builder(context,AlertDialog.THEME_DEVICE_DEFAULT_LIGHT);
 		TextView title = new TextView(context);
@@ -200,11 +240,20 @@ public class DownloadZipPdfFileUtil {
 		alertDialog2.setPositiveButton("OK",
 				new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
-				Intent intent = new Intent(context,MuPDFActivity.class);
-				intent.setAction(Intent.ACTION_VIEW);
-				intent.setData(Uri.parse("file://"+pdfFilePath.toString()+".pdf"));
-				context.startActivity(intent);
-				dialog.cancel();
+				if(!msgString.equals(AppConstants.internetMessage))
+				{
+					Intent intent = new Intent(context,MuPDFActivity.class);
+					intent.setAction(Intent.ACTION_VIEW);
+					intent.setData(Uri.parse("file://"+pdfFilePath.toString()+".pdf"));
+					context.startActivity(intent);
+					dialog.cancel();
+				}
+				else
+				{
+					dialog.cancel();
+				}
+				
+				
 			}
 		});
 		alertDialog2.show();
@@ -350,4 +399,6 @@ public class DownloadZipPdfFileUtil {
 			e.printStackTrace();
 		}
 	}   
+	
+
 }

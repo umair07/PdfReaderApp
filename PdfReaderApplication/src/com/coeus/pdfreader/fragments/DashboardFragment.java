@@ -4,59 +4,63 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.Fragment;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
 import android.util.Log;
 import android.view.Display;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 import at.technikum.mti.fancycoverflow.FancyCoverFlow;
 
 import com.artifex.mupdflib.MuPDFActivity;
-import com.coeus.pdfreader.MainActivity;
 import com.coeus.pdfreader.R;
 import com.coeus.pdfreader.adapters.CoverFlowAdapter;
 import com.coeus.pdfreader.model.PdfFileDataModel;
 import com.coeus.pdfreader.ormlite.BookmarksORM;
 import com.coeus.pdfreader.ormlite.DatabaseHelper;
-import com.coeus.pdfreader.servicehandler.ServiceHandler;
 import com.coeus.pdfreader.utilities.AppConstants;
 import com.coeus.pdfreader.utilities.DownloadZipPdfFileUtil;
 import com.j256.ormlite.android.apptools.OpenHelperManager;
 import com.j256.ormlite.dao.Dao;
 
 @SuppressLint("NewApi")
-public class DashboardFragment extends Fragment implements OnClickListener
+public class DashboardFragment extends AuthenTicateParentFragment implements OnClickListener
 {
 	View rootView;
 	private FancyCoverFlow fancyCoverFlow;
+	private TextView txtBookTitle;
 	Button btnDashboardOpenFile,btnDashboardOpenBookmarkList;
 	ArrayList<PdfFileDataModel> arrayListPdfFileDetail;
 	private int coverNumber = 0;
-	String noBoommarkFoundMsg = "No Bookmarks Found";
+	String noInternetMsg = "No Internet Connection";
+	String noBookmarkFoundMsg = "No Bookmarks Found";
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -66,9 +70,11 @@ public class DashboardFragment extends Fragment implements OnClickListener
 		arrayListPdfFileDetail =  new ArrayList<PdfFileDataModel>();
 		loadUIComponents();
 		registerClickListners();
+		rootView.getContext().registerReceiver(checkInternetConnection,
+				new IntentFilter("internetMessage"));
 		fixNetworkRestrictions();
 		pdfBooksDataApiCall();
-		setCoverFlow();
+		
 		return rootView;
 
 	}
@@ -84,23 +90,12 @@ public class DashboardFragment extends Fragment implements OnClickListener
 	private void pdfBooksDataApiCall() 
 	{
 		ServiceHandler serviceHandler;
-		String jasonResponse = null;
 		try
 		{
 			serviceHandler = new ServiceHandler();
 			if(AppConstants.isConnectingToInternet(getActivity()))
 			{
-				jasonResponse = serviceHandler.makeServiceCall(
-						AppConstants.pdfBooksDataJasonUrl,
-						ServiceHandler.GET);
-				JSONArray jasonPdfArray = new JSONArray(jasonResponse);
-
-				for (int j = 0; j < jasonPdfArray.length(); j++) {
-
-					arrayListPdfFileDetail.add(new PdfFileDataModel( new JSONObject(
-							jasonPdfArray.getString(j))));
-				}
-				Log.e("Api Response: ",""+ jasonResponse);
+				serviceHandler.execute(AppConstants.pdfBooksDataJasonUrl);
 			} 
 		} 
 		catch (Exception e) 
@@ -124,7 +119,7 @@ public class DashboardFragment extends Fragment implements OnClickListener
 			@Override
 			public void onItemSelected(AdapterView<?> parent, View view,
 					int position, long id) {
-
+				txtBookTitle.setText(arrayListPdfFileDetail.get(position).getBookTitle());
 				coverNumber = position;
 			}
 
@@ -146,6 +141,7 @@ public class DashboardFragment extends Fragment implements OnClickListener
 	{
 		btnDashboardOpenFile = (Button) rootView.findViewById(R.id.btnOpenFile);
 		btnDashboardOpenBookmarkList = (Button) rootView.findViewById(R.id.btnBookmarks);
+		txtBookTitle = (TextView)rootView.findViewById(R.id.txtBookTitle);
 	}
 	@Override
 	public void onClick(View v) 
@@ -154,6 +150,10 @@ public class DashboardFragment extends Fragment implements OnClickListener
 		{
 
 		case R.id.btnOpenFile:
+			try
+			{
+			if(AppConstants.isConnectingToInternet(getActivity()))
+			{
 			DownloadZipPdfFileUtil.createDir(Environment.getExternalStorageDirectory().toString(),AppConstants.folderName);
 			DownloadZipPdfFileUtil.createDir(AppConstants.filePath, AppConstants.subFolderName);
 			String unzipFileLocation = AppConstants.filePath+"/"+AppConstants.subFolderName+"/";
@@ -187,6 +187,16 @@ public class DashboardFragment extends Fragment implements OnClickListener
 			{
 				Log.e("Open Pdf File Exception", "" + e.getStackTrace());
 			}
+			}
+			else
+			{
+				Toast.makeText(getActivity(), noInternetMsg , Toast.LENGTH_LONG).show();
+			}
+			} catch (Exception e) 
+			{
+				Log.e("Internet Exception", "" + e.getStackTrace());
+			}
+			
 			break;
 
 		case R.id.btnBookmarks:
@@ -221,7 +231,11 @@ public class DashboardFragment extends Fragment implements OnClickListener
 			ArrayList<String> bookmarksNameList  =  new ArrayList<String>();
 			for (int i = 0; i < bookmarksListFromDb.size(); i++)
 			{
-				bookmarksNameList.add(bookmarksListFromDb.get(i).getBookmarkPageNum());
+				String[] splitedNamePageNum = bookmarksListFromDb.get(i).getBookmarkPageNum().split("_");
+				String bookName = splitedNamePageNum[0] +"_"+splitedNamePageNum[2]; 
+				
+				bookName = bookName.substring(0,1).toUpperCase() + bookName.substring(1).toLowerCase();
+				bookmarksNameList.add(bookName);
 				Log.e("", "Pages: "+bookmarksListFromDb.get(i).getBookmarkPageNum());
 			}
 			if(bookmarksNameList.size()>0)
@@ -230,7 +244,7 @@ public class DashboardFragment extends Fragment implements OnClickListener
 			}
 			else
 			{
-				Toast.makeText(getActivity(), noBoommarkFoundMsg, Toast.LENGTH_SHORT).show();
+				Toast.makeText(getActivity(), noBookmarkFoundMsg, Toast.LENGTH_SHORT).show();
 			}
 
 		}
@@ -292,9 +306,9 @@ public class DashboardFragment extends Fragment implements OnClickListener
 				dialogBookmarks.cancel();
 				
 				String[] splitedNamePageNum = list_FileName.get(position).split("_");
-				String bookName = splitedNamePageNum[0] +"_"+splitedNamePageNum[1]; 
+				String bookName = splitedNamePageNum[0].toLowerCase()+"_book.pdf"; 
 				
-				String pagenum = splitedNamePageNum[2];
+				String pagenum = splitedNamePageNum[1];
 				
 				String filePath = "file://"+AppConstants.filePath+"/"+AppConstants.subFolderName+"/"+ bookName;
 				openPdfFile(filePath,Integer.parseInt(pagenum));
@@ -303,5 +317,81 @@ public class DashboardFragment extends Fragment implements OnClickListener
 		});
 	}
 
-	
+	@Override
+	public void getAPIResult(String result) {
+		String jasonResponse = result;
+		try {
+			JSONArray jasonPdfArray = new JSONArray(jasonResponse);
+
+			for (int j = 0; j < jasonPdfArray.length(); j++) {
+
+				arrayListPdfFileDetail.add(new PdfFileDataModel( new JSONObject(
+						jasonPdfArray.getString(j))));
+			}
+			setCoverFlow();
+			Log.e("Api Response: ",""+ jasonResponse);
+		} catch (Exception e) {
+			Log.e("Json Response Exception: ", "" + e.getStackTrace());
+		}
+		
+	}
+
+	private final BroadcastReceiver checkInternetConnection = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			try
+			{
+			String internetStatus = intent.getStringExtra("internetStatus");
+			if(internetStatus.equals("0"))
+			{
+				// show no internet popup
+				noInternetDialog(getActivity(),AppConstants.internetMessage);
+			}
+			else if(internetStatus.equals("1"))
+			{
+				
+				// wifi enabled
+				Toast.makeText(context, AppConstants.internetConnectedMessage, Toast.LENGTH_LONG).show();
+			}
+			else if(internetStatus.equals("2"))
+			{
+				Toast.makeText(context, AppConstants.internetConnectedMessage, Toast.LENGTH_LONG).show();
+
+				// mobile data enabled
+			}
+			}
+			catch (Exception e) 
+			{
+				Log.e("Broadcast Receiver Exception: ", "" + e.getStackTrace());
+			}
+		}
+	};
+
+	public void noInternetDialog(final Context context,final String msgString)
+	{
+		AlertDialog.Builder alertDialog2 = new AlertDialog.Builder(context,AlertDialog.THEME_DEVICE_DEFAULT_LIGHT);
+		TextView title = new TextView(context);
+		title.setText("Message");
+		title.setPadding(10, 10, 10, 10);
+		title.setGravity(Gravity.CENTER);
+		title.setTextColor(Color.BLACK);
+		title.setTextSize(20);
+		alertDialog2.setCustomTitle(title);
+		TextView msg = new TextView(context);
+		msg.setText(msgString);
+		msg.setPadding(10, 10, 10, 10);
+		msg.setGravity(Gravity.CENTER);
+		msg.setTextSize(18);
+		msg.setTextColor(Color.BLACK);
+		alertDialog2.setView(msg);
+		alertDialog2.setPositiveButton("OK",
+				new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				
+				dialog.dismiss();
+				dialog.cancel();
+			}
+		});
+		alertDialog2.show();
+	}
 }

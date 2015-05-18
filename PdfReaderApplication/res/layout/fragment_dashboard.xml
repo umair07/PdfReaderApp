@@ -8,12 +8,22 @@
         android:id="@+id/fancyCoverFlow"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/btnOpenFile"
+        android:layout_above="@+id/txtBookTitle"
         android:layout_below="@+id/btnBookmarks"
         android:layout_centerVertical="true"
-        android:layout_marginTop="10dip"
         android:layout_marginBottom="10dp"
-        />
+        android:layout_marginTop="10dip" />
+
+    <TextView
+        android:id="@+id/txtBookTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/btnOpenFile"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5dp"
+        android:textColor="@color/black"
+        android:textSize="30sp"
+        android:textStyle="bold" />
 
     <Button
         android:id="@+id/btnBookmarks"

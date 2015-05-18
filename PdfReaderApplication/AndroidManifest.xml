@@ -51,6 +51,17 @@
             android:screenOrientation="portrait"
             android:theme="@style/AppReaderTheme" >
         </activity>
+
+        <receiver
+            android:name="com.coeus.pdfreader.listener.NetworkChangeReceiver"
+            android:label="NetworkChangeReceiver" >
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" >
+                    <action android:name="android.net.wifi.WIFI_STATE_CHANGED" >
+                    </action>
+                </action>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

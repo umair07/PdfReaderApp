@@ -12,6 +12,8 @@ public class AppConstants {
 	public static String folderName = "PdfDownloads" ;
 	public static String filePath = Environment.getExternalStorageDirectory().toString()+"/"+folderName ;
 	public static String subFolderName = "PdfFiles";
+	public static String internetConnectedMessage = "Wifi or Mobile data enabled.";
+	public static String internetMessage = "Internet disconnected";
 	// check connectivity
 	public static boolean isConnectingToInternet(Context pContext)
 	{
