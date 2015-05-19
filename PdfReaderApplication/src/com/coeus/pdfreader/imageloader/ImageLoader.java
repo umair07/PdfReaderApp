@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -21,6 +22,7 @@ import android.graphics.BitmapFactory;
 import android.widget.ImageView;
 
 import com.coeus.pdfreader.R;
+import com.coeus.pdfreader.utilities.AppConstants;
 
 public class ImageLoader {
 	MemoryCache memoryCache = new MemoryCache();
@@ -36,16 +38,22 @@ public class ImageLoader {
 
 	final int stub_id = R.drawable.no_cover_found;
 
-	public void DisplayImage(String url, ImageView imageView) {
+	public void DisplayImage(String url, ImageView imageView, String imageName) {
 
 		imageViews.put(imageView, url);
 		Bitmap bitmap = memoryCache.get(url);
+		
 		if (bitmap != null)
+		{
+			saveToSdCard(bitmap,imageName);
 			imageView.setImageBitmap(bitmap);
-		else {
+		}
+			else {
 			queuePhoto(url, imageView);
+			saveToSdCard(getBitmap(url),imageName);
 			imageView.setImageResource(stub_id);
 		}
+		
 	}
 
 	private void queuePhoto(String url, ImageView imageView) {
@@ -53,6 +61,30 @@ public class ImageLoader {
 		executorService.submit(new PhotosLoader(p));
 	}
 
+	private void saveToSdCard(Bitmap bitmap, String imageName)
+	{
+		File myDir = new File(AppConstants.imagePath);    
+		myDir.mkdirs();
+		String fname = imageName+".png";
+		File file = new File (myDir, fname);
+		FileOutputStream out = null;
+		try {
+		    out = new FileOutputStream(file);
+		    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
+		    // PNG is a lossless format, the compression factor (100) is ignored
+		} catch (Exception e) {
+		    e.printStackTrace();
+		} finally {
+		    try {
+		        if (out != null) {
+		            out.close();
+		        }
+		    } catch (IOException e) {
+		        e.printStackTrace();
+		    }
+		}
+		
+	}
 	private Bitmap getBitmap(String url) {
 		File f = fileCache.getFile(url);
 

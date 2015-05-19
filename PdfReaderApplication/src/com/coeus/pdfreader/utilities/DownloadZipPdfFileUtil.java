@@ -198,7 +198,6 @@ public class DownloadZipPdfFileUtil {
 
 					progressDialog.dismiss();
 					progressDialog.cancel();
-					customAlert(context, AppConstants.internetMessage);
 				}
 				else if(internetStatus.equals("1"))
 				{

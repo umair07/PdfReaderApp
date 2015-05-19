@@ -15,9 +15,11 @@ import android.app.Dialog;
 import android.app.Fragment;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -174,6 +176,12 @@ public abstract class AuthenTicateParentFragment extends Fragment {
 	public void onDetach() {
 		super.onDetach();
 	}
-
+	public void storeSharedPrefData(String tag, String value) {
+		SharedPreferences prefs = PreferenceManager
+				.getDefaultSharedPreferences(getActivity());
+		SharedPreferences.Editor editor = prefs.edit();
+		editor.putString(tag, value);
+		editor.commit();
+	}
 
 }

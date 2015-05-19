@@ -11,6 +11,8 @@ public class AppConstants {
 	public static String pdfBooksDataJasonUrl = "http://pdfreaderfileserver.comli.com/pdfbookjason.json";
 	public static String folderName = "PdfDownloads" ;
 	public static String filePath = Environment.getExternalStorageDirectory().toString()+"/"+folderName ;
+	public static String imageFolderName = "PdfCoverImages" ;
+	public static String imagePath = Environment.getExternalStorageDirectory().toString()+"/"+imageFolderName ;
 	public static String subFolderName = "PdfFiles";
 	public static String internetConnectedMessage = "Wifi or Mobile data enabled.";
 	public static String internetMessage = "Internet disconnected";

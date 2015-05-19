@@ -17,9 +17,12 @@
 
 package com.coeus.pdfreader.adapters;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -31,6 +34,7 @@ import com.coeus.pdfreader.imageloader.FileCache;
 import com.coeus.pdfreader.imageloader.ImageLoader;
 import com.coeus.pdfreader.imageloader.MemoryCache;
 import com.coeus.pdfreader.model.PdfFileDataModel;
+import com.coeus.pdfreader.utilities.AppConstants;
 
 public class CoverFlowAdapter extends FancyCoverFlowAdapter {
 
@@ -82,9 +86,18 @@ public class CoverFlowAdapter extends FancyCoverFlowAdapter {
             imageView_cover.setPadding(20, 20, 20, 0);
 
         }
+        String imagePath = AppConstants.imagePath +"/" +pdfFileDetailList.get(position).getPdfFileName()+"_cover.png";
+        File file = new File(imagePath);
+		if (file.exists()) {
+			
+        Bitmap bmp = BitmapFactory.decodeFile(imagePath);
+        imageView_cover.setImageBitmap(bmp);
+		}
+		else
+		{
+	        imageLoader.DisplayImage(pdfFileDetailList.get(position).getCoverUrl(), imageView_cover,pdfFileDetailList.get(position).getPdfFileName()+"_cover");
 
-        
-        imageLoader.DisplayImage(pdfFileDetailList.get(position).getCoverUrl(), imageView_cover);
+		}
 //        imageView_cover.setImageResource(this.getItem(position));
         return imageView_cover;
     }
