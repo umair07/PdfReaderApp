@@ -2,8 +2,13 @@ package com.artifex.mupdflib;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapShader;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.graphics.Shader.TileMode;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,9 +19,10 @@ public class MuPDFPageAdapter extends BaseAdapter {
 	private final FilePicker.FilePickerSupport mFilePickerSupport;
 	private final MuPDFCore mCore;
 	private final SparseArray<PointF> mPageSizes = new SparseArray<PointF>();
-	private       Bitmap mSharedHqBm;
+	private Bitmap mSharedHqBm;
 
-	public MuPDFPageAdapter(Context c, FilePicker.FilePickerSupport filePickerSupport, MuPDFCore core) {
+	public MuPDFPageAdapter(Context c,
+			FilePicker.FilePickerSupport filePickerSupport, MuPDFCore core) {
 
 		mContext = c;
 		mFilePickerSupport = filePickerSupport;
@@ -38,10 +44,16 @@ public class MuPDFPageAdapter extends BaseAdapter {
 	public View getView(final int position, View convertView, ViewGroup parent) {
 		final MuPDFPageView pageView;
 		if (convertView == null) {
-			if (mSharedHqBm == null || mSharedHqBm.getWidth() != parent.getWidth() || mSharedHqBm.getHeight() != parent.getHeight())
-				mSharedHqBm = Bitmap.createBitmap(parent.getWidth(), parent.getHeight(), Bitmap.Config.ARGB_8888);
 
-			pageView = new MuPDFPageView(mContext, mFilePickerSupport, mCore, new Point(parent.getWidth(), parent.getHeight()), mSharedHqBm);
+			if (mSharedHqBm == null
+					|| mSharedHqBm.getWidth() != parent.getWidth()
+					|| mSharedHqBm.getHeight() != parent.getHeight())
+
+				mSharedHqBm = Bitmap.createBitmap(parent.getWidth(),
+						parent.getHeight(), Bitmap.Config.ARGB_8888);
+			pageView = new MuPDFPageView(mContext, mFilePickerSupport, mCore,
+					new Point(parent.getWidth(), parent.getHeight()),
+					mSharedHqBm);
 		} else {
 			pageView = (MuPDFPageView) convertView;
 		}
@@ -77,4 +89,5 @@ public class MuPDFPageAdapter extends BaseAdapter {
 		}
 		return pageView;
 	}
+
 }
